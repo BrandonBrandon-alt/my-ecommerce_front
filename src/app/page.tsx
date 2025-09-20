@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { Button } from "@/components/animate-ui/components/buttons/button";
+import { ThemeTogglerButton } from "@/components/animate-ui/components/buttons/theme-toggler";
 
 export default function Home() {
   return (
@@ -49,6 +51,8 @@ export default function Home() {
           >
             Read our docs
           </a>
+          <Button>Click me</Button>
+          <ThemeTogglerButton />
         </div>
       </main>
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
