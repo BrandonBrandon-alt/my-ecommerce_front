@@ -39,9 +39,9 @@ export default function TestAuthService() {
         idNumber: '1234567890',
         name: 'Test',
         lastName: 'User',
-        email: 'brandonmontealegre@gmail.com',
+        email: 'brandonmontealegre15@gmail.com',
         phoneNumber: '3001234567',
-        password: 'Test123!@#',
+        password: 'M@mahermosa123',
         dateOfBirth: '1990-01-01',
         termsAccepted: true
       };
