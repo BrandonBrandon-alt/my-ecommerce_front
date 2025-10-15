@@ -20,6 +20,10 @@ interface LoginDTO {
   password: string;
 }
 
+interface GoogleOAuthLoginDTO {
+  idToken: string;
+}
+
 interface ActivateAccountDTO {
   activationCode: string;
 }
@@ -118,14 +122,14 @@ interface TokenValidationDTO {
 
 class AuthService {
   private api: AxiosInstance;
-  private readonly BASE_URL = '/api/auth';
+  private readonly BASE_URL = '/auth';
   private isRefreshing = false;
   private failedQueue: Array<{
     resolve: (value?: unknown) => void;
     reject: (reason?: any) => void;
   }> = [];
 
-  constructor(baseURL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080') {
+  constructor(baseURL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api') {
     this.api = axios.create({
       baseURL,
       headers: {
@@ -254,6 +258,17 @@ class AuthService {
 
   async login(data: LoginDTO): Promise<AuthResponseDTO> {
     const response = await this.api.post<AuthResponseDTO>(`${this.BASE_URL}/login`, data);
+    if (response.data.access_token) {
+      this.setToken(response.data.access_token);
+      if (response.data.refresh_token) {
+        this.setRefreshToken(response.data.refresh_token);
+      }
+    }
+    return response.data;
+  }
+
+  async loginWithGoogle(data: GoogleOAuthLoginDTO): Promise<AuthResponseDTO> {
+    const response = await this.api.post<AuthResponseDTO>(`${this.BASE_URL}/login/google`, data);
     if (response.data.access_token) {
       this.setToken(response.data.access_token);
       if (response.data.refresh_token) {
