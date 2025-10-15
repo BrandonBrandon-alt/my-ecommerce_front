@@ -52,8 +52,11 @@ export default function Register() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <ThemeTogglerButton />
               <FormField
                 control={form.control}
                 name="name"
@@ -116,6 +119,7 @@ export default function Register() {
               <Button type="submit" className="w-full">
                 Create Account
               </Button>
+
             </form>
           </Form>
           
