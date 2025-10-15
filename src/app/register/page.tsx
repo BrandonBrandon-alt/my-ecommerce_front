@@ -206,7 +206,7 @@ export default function Register() {
       // Ocultar el alert de error después de 5 segundos
       setTimeout(() => {
         setShowErrorAlert(false)
-      }, 5000)
+      }, 3000)
     } finally {
       setIsLoading(false)
     }

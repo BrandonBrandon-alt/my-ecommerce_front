@@ -42,6 +42,15 @@ Cypress.Commands.add('fillRegistrationStep3', (data: {
   cy.get('input[type="checkbox"]').check({ force: true });
 });
 
+// Custom command para llenar el formulario de login
+Cypress.Commands.add('fillLoginForm', (data: {
+  email: string;
+  password: string;
+}) => {
+  cy.get('input[name="email"]').clear().type(data.email);
+  cy.get('input[name="password"]').clear().type(data.password);
+});
+
 // Declare custom commands for TypeScript
 declare global {
   namespace Cypress {
@@ -58,6 +67,10 @@ declare global {
       fillRegistrationStep3(data: {
         password: string;
         confirmPassword: string;
+      }): Chainable<void>;
+      fillLoginForm(data: {
+        email: string;
+        password: string;
       }): Chainable<void>;
     }
   }

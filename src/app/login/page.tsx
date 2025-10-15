@@ -1,42 +1,56 @@
 'use client'
-
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { Form } from "@/components/ui/form"
 import * as z from "zod"
-import { toast } from "sonner"
-import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
-import { Form, FormField, FormItem, FormLabel, FormMessage, FormControl } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/animate-ui/components/buttons/button"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import Link from "next/link"
-import { Eye, EyeOff, Loader2, CheckCircle2, XCircle } from "lucide-react"
 import authService from "@/service/AuthService"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { CheckCircle2, Eye, EyeOff, Loader2, XCircle } from "lucide-react"
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/animate-ui/components/buttons/button"
+import Link from "next/link"
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 
-// Esquema de validación para login
+/**
+ * Schema de validación para el formulario de login
+ */
 const loginSchema = z.object({
-  email: z.string()
-    .email({ message: "Please enter a valid email address." })
-    .max(100, { message: "Email must not exceed 100 characters." }),
-  password: z.string()
-    .min(1, { message: "Password is required." }),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters." })
+    .max(100, { message: "Password must not exceed 100 characters." })
+    .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter." })
+    .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter." })
+    .regex(/[0-9]/, { message: "Password must contain at least one number." })
+    .regex(/[@#$%^&+=!]/, { message: "Password must contain at least one special character (@#$%^&+=!)." }),
 })
 
+/**
+ * Tipo de datos para el formulario de login
+ */
 type LoginFormData = z.infer<typeof loginSchema>
 
+/**
+ * Componente de login
+ */
 export default function Login() {
+
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [showSuccessAlert, setShowSuccessAlert] = useState(false)
   const [showErrorAlert, setShowErrorAlert] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const isGoogleConfigured = !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
+  /**
+   * Formulario de login
+   */
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -45,54 +59,9 @@ export default function Login() {
     },
   })
 
-  const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true)
-    setShowErrorAlert(false)
-
-    try {
-      const result = await authService.login({
-        email: data.email,
-        password: data.password,
-      })
-
-      // Mostrar Alert de éxito
-      setSuccessMessage('Login successful! Redirecting...')
-      setShowSuccessAlert(true)
-
-      // Toast de éxito
-      toast.success('Welcome back!', {
-        description: 'You have successfully logged in.',
-      })
-
-      // Resetear el formulario
-      form.reset()
-
-      // Redirigir al dashboard o home
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1500)
-
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.message || error.message || 'An unexpected error occurred'
-      
-      // Mostrar Alert de error
-      setErrorMessage(errorMsg)
-      setShowErrorAlert(true)
-
-      // Toast de error
-      toast.error('Login failed', {
-        description: errorMsg,
-      })
-
-      // Ocultar el alert de error después de 5 segundos
-      setTimeout(() => {
-        setShowErrorAlert(false)
-      }, 5000)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
+  /**
+   * Manejo del éxito de la autenticación con Google
+   */
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     setIsGoogleLoading(true)
     setShowErrorAlert(false)
@@ -106,14 +75,18 @@ export default function Login() {
         idToken: credentialResponse.credential,
       })
 
-      // Mostrar Alert de éxito
-      setSuccessMessage('Google login successful! Redirecting...')
-      setShowSuccessAlert(true)
+      // Validar que se recibió el token de acceso
+      if (!result.access_token) {
+        throw new Error('No se recibió token de autenticación')
+      }
 
-      // Toast de éxito
-      toast.success('Welcome!', {
-        description: 'You have successfully logged in with Google.',
-      })
+      // Mensaje de éxito del backend o mensaje por defecto
+      const successMsg = result.message || 'Google login successful! Redirecting...'
+      const userName = result.user_info?.name || result.user_info?.email || 'User'
+
+      // Mostrar Alert de éxito
+      setSuccessMessage(successMsg)
+      setShowSuccessAlert(true)
 
       // Redirigir al dashboard o home
       setTimeout(() => {
@@ -122,49 +95,92 @@ export default function Login() {
 
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || error.message || 'Google login failed'
-      
+
       // Mostrar Alert de error
       setErrorMessage(errorMsg)
       setShowErrorAlert(true)
 
-      // Toast de error
-      toast.error('Google login failed', {
-        description: errorMsg,
-      })
-
       // Ocultar el alert de error después de 5 segundos
       setTimeout(() => {
         setShowErrorAlert(false)
-      }, 5000)
+      }, 1500)
     } finally {
       setIsGoogleLoading(false)
     }
   }
 
+  /**
+   * Manejo del error de la autenticación con Google
+   */
   const handleGoogleError = () => {
-    toast.error('Google login failed', {
-      description: 'An error occurred during Google authentication.',
-    })
+    setErrorMessage('An error occurred during Google authentication.')
+    setShowErrorAlert(true)
+
+    setTimeout(() => {
+      setShowErrorAlert(false)
+    }, 1500)
   }
 
+  /**
+   * Manejo del envío del formulario de login
+   */
+  const onSubmit = async (data: LoginFormData) => {
+    setIsLoading(true)
+    try {
+      const result = await authService.login({
+        email: data.email,
+        password: data.password,
+      })
+
+      // Mostrar Alert de éxito
+      setSuccessMessage(result.message || 'Login successful!')
+      setShowSuccessAlert(true)
+
+      form.reset()
+
+      setTimeout(() => {
+        router.push('/home')
+      }, 3000)
+
+    } catch (error: any) {
+      // Obtener mensaje de error
+      const errorMsg = error.response?.data?.message || error.message || 'An unexpected error occurred'
+
+      // Mostrar Alert de error
+      setErrorMessage(errorMsg)
+      setShowErrorAlert(true)
+
+
+      setTimeout(() => {
+        setShowErrorAlert(false)
+      }, 1500)
+
+    } finally {
+      setIsLoading(false)
+    }
+
+  }
+
+  /**
+   * Renderizado del componente
+   */
   return (
+
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
+        <CardHeader className="space-y-4">
           <div className="flex justify-center items-center">
             <CardTitle className="text-2xl font-bold">Login</CardTitle>
           </div>
-          <CardDescription className="text-center">
-            Enter your credentials to access your account
-          </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+
           {/* Alert de éxito */}
           {showSuccessAlert && (
             <Alert className="mb-4 border-green-500 bg-green-50 dark:bg-green-950/20">
               <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
               <AlertTitle className="text-green-800 dark:text-green-300">
-                Success!
+                Login successful!
               </AlertTitle>
               <AlertDescription className="text-green-700 dark:text-green-400">
                 {successMessage}
@@ -177,7 +193,7 @@ export default function Login() {
             <Alert className="mb-4 border-red-500 bg-red-50 dark:bg-red-950/20 animate-in fade-in-50 slide-in-from-top-5 duration-300">
               <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
               <AlertTitle className="text-red-800 dark:text-red-300">
-                Login failed
+                Failed to login
               </AlertTitle>
               <AlertDescription className="text-red-700 dark:text-red-400">
                 {errorMessage}
@@ -185,8 +201,10 @@ export default function Login() {
             </Alert>
           )}
 
+          {/* Formulario de login */}
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 animate-in fade-in-50 slide-in-from-right-5 duration-300">
+
               {/* EMAIL */}
               <FormField
                 control={form.control}
@@ -195,13 +213,11 @@ export default function Login() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="john@example.com"
-                        {...field}
-                        disabled={isLoading || isGoogleLoading}
-                      />
+                      <Input placeholder="name@example.com" {...field} disabled={isLoading || isGoogleLoading} />
                     </FormControl>
+                    <FormDescription>
+                      Your email address
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -216,12 +232,7 @@ export default function Login() {
                     <FormLabel>Password</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          {...field}
-                          disabled={isLoading || isGoogleLoading}
-                        />
+                        <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} disabled={isLoading || isGoogleLoading} />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
@@ -229,35 +240,24 @@ export default function Login() {
                           disabled={isLoading || isGoogleLoading}
                         >
                           {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
+                            <EyeOff className="h-6 w-6" />
                           ) : (
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-6 w-6" />
                           )}
                         </button>
                       </div>
                     </FormControl>
+                    <FormDescription>
+                      Your password
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Forgot Password Link */}
-              <div className="text-right">
-                <Link 
-                  href="/forgot-password" 
-                  className="text-sm text-primary underline-offset-4 hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              {/* BOTÓN DE LOGIN */}
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading || isGoogleLoading}
-              >
-                {isLoading ? (
+              {/* Botón de envío */}
+              <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
+                {isLoading || isGoogleLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Logging in...
@@ -269,40 +269,45 @@ export default function Login() {
             </form>
           </Form>
 
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
+          {/* Divider y Google Login - Solo si está configurado */}
+          {isGoogleConfigured && (
+            <>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
 
-          {/* Google Login Button */}
-          <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              useOneTap
-              theme="outline"
-              size="large"
-              text="signin_with"
-              shape="rectangular"
-            />
-          </div>
+              {/* Google Login Button */}
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  useOneTap
+                  theme="outline"
+                  size="large"
+                  text="signin_with"
+                  shape="rectangular"
+                />
+              </div>
+            </>
+          )}
 
-          {/* Register Link */}
+          {/* Link de registro */}
           <div className="mt-4 text-center text-sm">
             Don't have an account?{" "}
             <Link href="/register" className="text-primary underline-offset-4 hover:underline">
-              Sign up
-            </Link>
+              Register
+            </Link >
           </div>
         </CardContent>
       </Card>
     </div>
   )
+
 }

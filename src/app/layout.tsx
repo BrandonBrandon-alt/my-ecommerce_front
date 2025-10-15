@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { GoogleAuthProvider } from "@/components/providers/GoogleAuthProvider";
 import { Toaster } from "sonner";
+import { Navbar } from "@/components/ui/navbar/navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,13 +27,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <GoogleAuthProvider>
-          <ThemeProvider attribute="class">
-            {children}
+          <ThemeProvider 
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Navbar />
+            <main className="min-h-screen">
+              {children}
+            </main>
             <Toaster position="top-right" richColors />
           </ThemeProvider>
         </GoogleAuthProvider>
