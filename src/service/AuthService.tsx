@@ -463,6 +463,8 @@ class AuthService {
     return this.getToken() !== null;
   }
 
+  
+
   getAuthToken(): string | null {
     return this.getToken();
   }
@@ -489,6 +491,8 @@ class AuthService {
     }
   }
 }
+
+
 
 // Crear instancia única
 let authServiceInstance: AuthService | null = null;

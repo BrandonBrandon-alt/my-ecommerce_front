@@ -6,13 +6,15 @@ import { useForm } from "react-hook-form"
 import { Form } from "@/components/ui/form"
 import * as z from "zod"
 import authService from "@/service/AuthService"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { CheckCircle2, Eye, EyeOff, Loader2, XCircle } from "lucide-react"
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/animate-ui/components/buttons/button"
-import Link from "next/link"
+
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 
 /**
@@ -254,6 +256,16 @@ export default function Login() {
                   </FormItem>
                 )}
               />
+
+              {/* Link de registro */}
+              <div className="mt-4  text-sm">
+                Forgot Password?{" "}
+                <Link href="/forgotPassword" className="text-primary underline-offset-4 hover:underline">
+                  Reset Password
+                </Link >
+              </div>
+
+
 
               {/* Botón de envío */}
               <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>

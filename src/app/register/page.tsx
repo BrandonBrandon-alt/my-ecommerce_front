@@ -12,7 +12,6 @@ import { Button } from "@/components/animate-ui/components/buttons/button"
 import { Button as ButtonUI } from "@/components/ui/button"
 import { Checkbox } from "@/components/animate-ui/components/base/checkbox"
 import Link from "next/link"
-import { ThemeTogglerButton } from "@/components/animate-ui/components/buttons/theme-toggler"
 import { Eye, EyeOff, Loader2, CheckCircle2, CalendarIcon, ChevronLeft, ChevronRight, XCircle } from "lucide-react"
 import authService from "@/service/AuthService"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -118,7 +117,7 @@ export default function Register() {
   // Validar campos del paso actual
   const validateStep = async (step: number) => {
     let fieldsToValidate: (keyof RegisterFormData)[] = []
-    
+
     switch (step) {
       case 1:
         fieldsToValidate = ['idNumber', 'name', 'lastName', 'dateOfBirth']
@@ -130,7 +129,7 @@ export default function Register() {
         fieldsToValidate = ['password', 'confirmPassword', 'termsAccepted']
         break
     }
-    
+
     const result = await form.trigger(fieldsToValidate)
     return result
   }
@@ -169,32 +168,22 @@ export default function Register() {
       setSuccessMessage(result.message || 'Please check your email to activate your account.')
       setShowSuccessAlert(true)
 
-      // Toast de éxito con Sonner
-      toast.success('Account created successfully!', {
-        description: result.message || 'Please check your email to activate your account.',
-      })
-
       // Resetear el formulario
       form.reset()
 
       // Redirigir después de 3 segundos para que el usuario vea el alert
       setTimeout(() => {
         router.push('/login')
-      }, 3000)
+      }, 1500)
 
     } catch (error: any) {
       // Obtener mensaje de error
       const errorMsg = error.response?.data?.message || error.message || 'An unexpected error occurred'
-      
+
       // Mostrar Alert de error
       setErrorMessage(errorMsg)
       setShowErrorAlert(true)
-      
-      // Toast de error con Sonner
-      toast.error('Failed to create account', {
-        description: errorMsg,
-      })
-      
+
       // Redirigir al paso correcto según el error
       const lowerErrorMsg = errorMsg.toLowerCase()
       if (lowerErrorMsg.includes('email') && lowerErrorMsg.includes('already')) {
@@ -202,11 +191,11 @@ export default function Register() {
       } else if (lowerErrorMsg.includes('id') && lowerErrorMsg.includes('already')) {
         setCurrentStep(1) // Paso de información personal donde está el ID
       }
-      
+
       // Ocultar el alert de error después de 5 segundos
       setTimeout(() => {
         setShowErrorAlert(false)
-      }, 3000)
+      }, 1500)
     } finally {
       setIsLoading(false)
     }
@@ -222,7 +211,7 @@ export default function Register() {
           <CardDescription className="text-center">
             {STEPS[currentStep - 1].description}
           </CardDescription>
-          
+
           {/* Indicador de progreso */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
@@ -234,8 +223,8 @@ export default function Register() {
                       currentStep > step.id
                         ? "bg-primary text-primary-foreground"
                         : currentStep === step.id
-                        ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
-                        : "bg-muted text-muted-foreground"
+                          ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
+                          : "bg-muted text-muted-foreground"
                     )}
                   >
                     {currentStep > step.id ? (
@@ -291,7 +280,7 @@ export default function Register() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              
+
               {/* PASO 1: Información Personal */}
               {currentStep === 1 && (
                 <div className="space-y-4 animate-in fade-in-50 slide-in-from-right-5 duration-300">
@@ -556,7 +545,7 @@ export default function Register() {
                     Back
                   </ButtonUI>
                 )}
-                
+
                 {currentStep < STEPS.length ? (
                   <Button
                     type="button"
