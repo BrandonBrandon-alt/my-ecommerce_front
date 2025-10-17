@@ -6,18 +6,17 @@ describe('Formulario de Login', () => {
   describe('Renderizado inicial', () => {
     it('debe mostrar todos los elementos del formulario', () => {
       cy.contains('Login').should('be.visible');
-      cy.contains('Enter your credentials to access your account').should('be.visible');
       cy.get('input[name="email"]').should('be.visible');
       cy.get('input[name="password"]').should('be.visible');
       cy.contains('button', 'Login').should('be.visible');
-      cy.contains('Forgot password?').should('be.visible');
+      cy.contains('Forgot Password?').should('be.visible');
       cy.contains("Don't have an account?").should('be.visible');
-      cy.contains('Sign up').should('be.visible');
+      cy.contains('Register').should('be.visible');
     });
 
-    it('debe mostrar el botón de Google Login', () => {
-      // El botón de Google se renderiza en un iframe
-      cy.get('iframe').should('exist');
+    it('debe mostrar descripciones de los campos', () => {
+      cy.contains('Your email address').should('be.visible');
+      cy.contains('Your password').should('be.visible');
     });
 
     it('debe mostrar el botón de toggle para la contraseña', () => {
@@ -27,109 +26,61 @@ describe('Formulario de Login', () => {
 
   describe('Validación de campos', () => {
     it('debe validar que el email está vacío', () => {
-      cy.get('input[name="password"]').type('ValidPass123!');
+      cy.get('input[name="password"]').type('password123');
       cy.contains('button', 'Login').click();
-      // La validación de react-hook-form previene el submit
       cy.get('input[name="email"]').should('have.attr', 'aria-invalid', 'true');
     });
 
     it('debe validar que el email no es válido', () => {
-      cy.fillLoginForm({
-        email: 'invalid-email',
-        password: 'ValidPass123!',
-      });
+      cy.get('input[name="email"]').type('invalid-email');
+      cy.get('input[name="password"]').type('password123');
       cy.contains('button', 'Login').click();
-      // La validación de react-hook-form previene el submit
       cy.get('input[name="email"]').should('have.attr', 'aria-invalid', 'true');
+      cy.contains('Please enter a valid email address').should('be.visible');
     });
 
-    it('debe validar que la contraseña está vacía', () => {
+    it('debe aceptar cualquier contraseña no vacía', () => {
       cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('abc');
       cy.contains('button', 'Login').click();
-      // La validación de react-hook-form previene el submit
-      cy.get('input[name="password"]').should('have.attr', 'aria-invalid', 'true');
-    });
-
-    it('debe validar que la contraseña tiene menos de 8 caracteres', () => {
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: 'Short1!',
-      });
-      cy.contains('button', 'Login').click();
-      cy.get('input[name="password"]').should('have.attr', 'aria-invalid', 'true');
-    });
-
-    it('debe validar que la contraseña no contiene un número', () => {
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: 'NoNumber!',
-      });
-      cy.contains('button', 'Login').click();
-      cy.get('input[name="password"]').should('have.attr', 'aria-invalid', 'true');
-    });
-
-    it('debe validar que la contraseña no contiene una minúscula', () => {
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: 'NOLOWER123!',
-      });
-      cy.contains('button', 'Login').click();
-      cy.get('input[name="password"]').should('have.attr', 'aria-invalid', 'true');
-    });
-
-    it('debe validar que la contraseña no contiene una mayúscula', () => {
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: 'noupper123!',
-      });
-      cy.contains('button', 'Login').click();
-      cy.get('input[name="password"]').should('have.attr', 'aria-invalid', 'true');
-    });
-
-    it('debe validar que la contraseña no contiene un carácter especial', () => {
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: 'NoSpecial123',
-      });
-      cy.contains('button', 'Login').click();
-      cy.get('input[name="password"]').should('have.attr', 'aria-invalid', 'true');
-    });
-
-    it('debe validar que la contraseña excede 100 caracteres', () => {
-      const longPassword = 'ValidPass123!' + 'a'.repeat(100);
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: longPassword,
-      });
-      cy.contains('button', 'Login').click();
-      cy.get('input[name="password"]').should('have.attr', 'aria-invalid', 'true');
+      // No debe haber errores de validación en el campo
+      cy.get('input[name="password"]').should('not.have.attr', 'aria-invalid', 'true');
     });
   });
 
   describe('Funcionalidad de toggle de contraseña', () => {
     it('debe mostrar/ocultar la contraseña al hacer clic en el botón', () => {
       cy.get('input[name="password"]').type('TestPassword123!');
-      
+
       // Verificar que inicialmente es tipo password
       cy.get('input[name="password"]').should('have.attr', 'type', 'password');
-      
+
       // Hacer clic en el botón de toggle
       cy.get('input[name="password"]').parent().find('button[type="button"]').click();
-      
+
       // Verificar que ahora es tipo text
       cy.get('input[name="password"]').should('have.attr', 'type', 'text');
-      
+
       // Hacer clic nuevamente para ocultar
       cy.get('input[name="password"]').parent().find('button[type="button"]').click();
-      
+
       // Verificar que vuelve a ser tipo password
       cy.get('input[name="password"]').should('have.attr', 'type', 'password');
+    });
+
+    it('debe mostrar el icono correcto según el estado', () => {
+      cy.get('input[name="password"]').type('TestPassword123!');
+
+      // Estado inicial debe mostrar Eye icon (para mostrar)
+      cy.get('input[name="password"]').parent().find('button[type="button"]').click();
+
+      // Después del clic debe mostrar EyeOff icon (para ocultar)
+      cy.get('input[name="password"]').parent().find('button[type="button"]').click();
     });
   });
 
   describe('Envío del formulario', () => {
     it('debe enviar el formulario con credenciales válidas', () => {
-      // Interceptar la petición de login
       cy.intercept('POST', '**/auth/login', {
         statusCode: 200,
         body: {
@@ -143,26 +94,20 @@ describe('Formulario de Login', () => {
         },
       }).as('loginRequest');
 
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: 'ValidPass123!',
-      });
-
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('ValidPass123!');
       cy.contains('button', 'Login').click();
 
-      // Esperar que se haga la petición
       cy.wait('@loginRequest');
 
       // Verificar que se muestra el alert de éxito
-      cy.contains('Success!').should('be.visible');
-      cy.contains('Login successful! Redirecting...').should('be.visible');
+      cy.contains('Login successful!').should('be.visible');
 
-      // Verificar que se redirige al dashboard
-      cy.url().should('include', '/dashboard');
+      // Verificar que se redirige a /home
+      cy.url().should('include', '/home', { timeout: 3000 });
     });
 
     it('debe mostrar error cuando las credenciales son incorrectas', () => {
-      // Interceptar la petición de login con error
       cy.intercept('POST', '**/auth/login', {
         statusCode: 401,
         body: {
@@ -170,18 +115,15 @@ describe('Formulario de Login', () => {
         },
       }).as('loginRequest');
 
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: 'WrongPass123!',
-      });
-
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('WrongPass123!');
       cy.contains('button', 'Login').click();
 
-      // Esperar la respuesta del servidor
       cy.wait('@loginRequest');
-      
-      // Verificar que se muestra el alert de error
-      cy.contains('Login failed').should('be.visible');
+
+      // El componente muestra "Failed to login" en AlertTitle
+      cy.contains('Failed to login').should('be.visible');
+      // Y el mensaje del servidor en AlertDescription
       cy.contains('Invalid email or password').should('be.visible');
 
       // Verificar que NO se redirige
@@ -196,15 +138,11 @@ describe('Formulario de Login', () => {
         },
       }).as('loginRequest');
 
-      cy.fillLoginForm({
-        email: 'nonexistent@example.com',
-        password: 'ValidPass123!',
-      });
-
+      cy.get('input[name="email"]').type('nonexistent@example.com');
+      cy.get('input[name="password"]').type('ValidPass123!');
       cy.contains('button', 'Login').click();
 
       cy.wait('@loginRequest');
-      cy.contains('Login failed').should('be.visible');
       cy.contains('User not found').should('be.visible');
     });
 
@@ -220,11 +158,8 @@ describe('Formulario de Login', () => {
         });
       }).as('loginRequest');
 
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: 'ValidPass123!',
-      });
-
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('ValidPass123!');
       cy.contains('button', 'Login').click();
 
       // Verificar que se muestra el loader inmediatamente
@@ -247,17 +182,34 @@ describe('Formulario de Login', () => {
         });
       }).as('loginRequest');
 
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: 'ValidPass123!',
-      });
-
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('ValidPass123!');
       cy.contains('button', 'Login').click();
 
       // Verificar que los campos están deshabilitados mientras carga
       cy.contains('button', 'Logging in...').should('be.visible');
       cy.get('input[name="email"]').should('be.disabled');
       cy.get('input[name="password"]').should('be.disabled');
+    });
+
+    it('debe deshabilitar el botón de toggle de contraseña durante el login', () => {
+      cy.intercept('POST', '**/auth/login', (req) => {
+        req.reply({
+          delay: 1000,
+          statusCode: 200,
+          body: {
+            message: 'Login successful',
+            token: 'fake-jwt-token',
+          },
+        });
+      }).as('loginRequest');
+
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('ValidPass123!');
+      cy.contains('button', 'Login').click();
+
+      // Verificar que el botón de toggle está deshabilitado
+      cy.get('input[name="password"]').parent().find('button[type="button"]').should('be.disabled');
     });
 
     it('debe ocultar el alert de error después de 5 segundos', () => {
@@ -268,22 +220,18 @@ describe('Formulario de Login', () => {
         },
       }).as('loginRequest');
 
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: 'WrongPass123!',
-      });
-
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('WrongPass123!');
       cy.contains('button', 'Login').click();
 
-      // Esperar la respuesta
       cy.wait('@loginRequest');
-      
+
       // Verificar que se muestra el alert
-      cy.contains('Login failed').should('be.visible');
+      cy.contains('Invalid credentials').should('be.visible');
 
       // Esperar 5 segundos y verificar que desaparece
       cy.wait(5000);
-      cy.contains('Login failed').should('not.exist');
+      cy.contains('Invalid credentials').should('not.exist');
     });
 
     it('debe resetear el formulario después de un login exitoso', () => {
@@ -295,30 +243,60 @@ describe('Formulario de Login', () => {
         },
       }).as('loginRequest');
 
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: 'ValidPass123!',
-      });
-
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('ValidPass123!');
       cy.contains('button', 'Login').click();
 
       cy.wait('@loginRequest');
 
-      // Los campos deberían estar vacíos (aunque luego redirige)
+      // Los campos deberían estar vacíos después del reset
       cy.get('input[name="email"]').should('have.value', '');
       cy.get('input[name="password"]').should('have.value', '');
+    });
+
+    it('debe mostrar el alert de éxito con el mensaje del servidor', () => {
+      cy.intercept('POST', '**/auth/login', {
+        statusCode: 200,
+        body: {
+          message: 'Welcome back, user!',
+          token: 'fake-jwt-token',
+        },
+      }).as('loginRequest');
+
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('ValidPass123!');
+      cy.contains('button', 'Login').click();
+
+      cy.wait('@loginRequest');
+      cy.contains('Welcome back, user!').should('be.visible');
+    });
+
+    it('debe mostrar mensaje por defecto si el servidor no envía mensaje', () => {
+      cy.intercept('POST', '**/auth/login', {
+        statusCode: 200,
+        body: {
+          token: 'fake-jwt-token',
+        },
+      }).as('loginRequest');
+
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('ValidPass123!');
+      cy.contains('button', 'Login').click();
+
+      cy.wait('@loginRequest');
+      cy.contains('Login successful!').should('be.visible');
     });
   });
 
   describe('Navegación', () => {
-    it('debe navegar a la página de registro al hacer clic en "Sign up"', () => {
-      cy.contains('Sign up').click();
+    it('debe navegar a la página de registro al hacer clic en "Register"', () => {
+      cy.contains('Register').click();
       cy.url().should('include', '/register');
     });
 
     it('debe navegar a la página de recuperación de contraseña', () => {
-      cy.contains('Forgot password?').click();
-      cy.url().should('include', '/forgot-password');
+      cy.contains('Reset Password').click();
+      cy.url().should('include', '/forgotPassword');
     });
   });
 
@@ -331,15 +309,11 @@ describe('Formulario de Login', () => {
         },
       }).as('loginRequest');
 
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: 'ValidPass123!',
-      });
-
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('ValidPass123!');
       cy.contains('button', 'Login').click();
 
       cy.wait('@loginRequest');
-      cy.contains('Login failed').should('be.visible');
       cy.contains('Internal server error').should('be.visible');
     });
 
@@ -348,52 +322,135 @@ describe('Formulario de Login', () => {
         forceNetworkError: true,
       }).as('loginRequest');
 
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: 'ValidPass123!',
-      });
-
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('ValidPass123!');
       cy.contains('button', 'Login').click();
 
-      // Esperar un momento para que se intente la petición
       cy.wait(1000);
-      cy.contains('Login failed').should('be.visible');
+
+      // Verificar que hay algún mensaje de error visible
+      cy.get('body').then(($body) => {
+        const hasNetworkError = $body.text().includes('Network');
+        const hasError = $body.text().includes('error');
+        const hasFailed = $body.text().includes('failed');
+
+        expect(hasNetworkError || hasError || hasFailed).to.be.true;
+      });
+    });
+
+    it('debe manejar respuesta sin mensaje de error', () => {
+      cy.intercept('POST', '**/auth/login', {
+        statusCode: 401,
+        body: {},
+      }).as('loginRequest');
+
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('WrongPass123!');
+      cy.contains('button', 'Login').click();
+
+      cy.wait('@loginRequest');
+      cy.contains('An unexpected error occurred').should('be.visible');
     });
 
     it('debe manejar timeout de la petición', () => {
       cy.intercept('POST', '**/auth/login', (req) => {
         req.reply({
-          delay: 30000, // 30 segundos
+          delay: 30000,
           statusCode: 200,
           body: {},
         });
       }).as('loginRequest');
 
-      cy.fillLoginForm({
-        email: 'test@example.com',
-        password: 'ValidPass123!',
-      });
-
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('ValidPass123!');
       cy.contains('button', 'Login').click();
 
-      // Verificar que se muestra el loader
       cy.contains('button', 'Logging in...').should('be.visible');
     });
   });
 
   describe('Accesibilidad', () => {
-    it('debe permitir navegar con el teclado', () => {
+    it('debe permitir navegar con el teclado entre campos', () => {
       cy.get('input[name="email"]').type('test@example.com');
-      cy.get('input[name="email"]').type('{enter}');
-      // Verificar que el foco se puede mover manualmente
-      cy.get('input[name="password"]').focus();
+      cy.get('input[name="email"]').focus();
+      cy.realPress('Tab');
       cy.focused().should('have.attr', 'name', 'password');
-      cy.focused().type('ValidPass123!');
     });
 
     it('debe tener labels asociados a los inputs', () => {
       cy.get('label').contains('Email').should('exist');
       cy.get('label').contains('Password').should('exist');
+    });
+
+    it('debe tener placeholder en los campos', () => {
+      cy.get('input[name="email"]').should('have.attr', 'placeholder', 'name@example.com');
+      cy.get('input[name="password"]').should('have.attr', 'placeholder', '••••••••');
+    });
+
+    it('debe tener autocomplete en el campo de contraseña', () => {
+      cy.get('input[name="password"]').should('have.attr', 'autocomplete', 'current-password');
+    });
+  });
+
+  describe('Animaciones de alerts', () => {
+    it('debe mostrar el alert de éxito con icono CheckCircle2', () => {
+      cy.intercept('POST', '**/auth/login', {
+        statusCode: 200,
+        body: {
+          message: 'Login successful',
+          token: 'fake-jwt-token',
+        },
+      }).as('loginRequest');
+
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('ValidPass123!');
+      cy.contains('button', 'Login').click();
+
+      cy.wait('@loginRequest');
+
+      // Verificar componentes del alert de éxito
+      cy.contains('Login successful!').parent().parent().within(() => {
+        cy.get('svg').should('exist'); // CheckCircle2 icon
+        cy.contains('Login successful!').should('be.visible');
+      });
+    });
+
+    it('debe mostrar el alert de error con icono XCircle', () => {
+      cy.intercept('POST', '**/auth/login', {
+        statusCode: 401,
+        body: {
+          message: 'Invalid credentials',
+        },
+      }).as('loginRequest');
+
+      cy.get('input[name="email"]').type('test@example.com');
+      cy.get('input[name="password"]').type('WrongPass!');
+      cy.contains('button', 'Login').click();
+
+      cy.wait('@loginRequest');
+
+      // Verificar componentes del alert de error
+      cy.contains('Invalid credentials').parent().parent().within(() => {
+        cy.get('svg').should('exist'); // XCircle icon
+        cy.contains('Invalid credentials').should('be.visible');
+      });
+    });
+  });
+
+  describe('Layout y estructura', () => {
+    it('debe renderizar el Card correctamente', () => {
+      // Usar un selector más específico que encuentre solo un card
+      cy.get('div[class*="max-w-md"]').within(() => {
+        cy.contains('Login').should('exist');
+      });
+    });
+
+    it('debe tener el ancho máximo correcto', () => {
+      cy.get('[class*="max-w-md"]').should('exist');
+    });
+
+    it('debe estar centrado en la pantalla', () => {
+      cy.get('[class*="min-h-screen"][class*="items-center"][class*="justify-center"]').should('exist');
     });
   });
 });

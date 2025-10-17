@@ -59,7 +59,7 @@ export default function ForgotPassword() {
             form.reset()
 
             setTimeout(() => {
-                router.push('/activateAccount')
+                router.push(`/resetPassword?email=${encodeURIComponent(data.email)}`)
             }, 1500)
 
         } catch (error: any) {

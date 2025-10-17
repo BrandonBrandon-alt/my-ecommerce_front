@@ -1,10 +1,10 @@
+// components/ui/alert.tsx
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-
 import { cn } from "@/lib/utils"
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
+  "relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current transition-all duration-300",
   {
     variants: {
       variant: {
@@ -19,16 +19,27 @@ const alertVariants = cva(
   }
 )
 
+interface AlertProps extends React.ComponentProps<"div">, VariantProps<typeof alertVariants> {
+  isExiting?: boolean
+}
+
 function Alert({
   className,
   variant,
+  isExiting = false,
   ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
+}: AlertProps) {
   return (
     <div
       data-slot="alert"
       role="alert"
-      className={cn(alertVariants({ variant }), className)}
+      className={cn(
+        alertVariants({ variant }),
+        isExiting 
+          ? "animate-out fade-out-0 slide-out-to-top-4 duration-300"
+          : "animate-in fade-in-0 slide-in-from-top-4 duration-300",
+        className
+      )}
       {...props}
     />
   )

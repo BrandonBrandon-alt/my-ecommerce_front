@@ -32,6 +32,10 @@ interface ResendActivationCodeDTO {
   email: string;
 }
 
+interface ResendResetCodeDTO {
+  email: string;
+}
+
 interface RequestImmediateUnlockDTO {
   email: string;
 }
@@ -173,21 +177,32 @@ class AuthService {
       (response) => response,
       async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+        const status = error.response?.status;
 
-        // Si el token expiró, intentar refrescar
-        if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+        // ⚠️ Si no hay respuesta o el request no existe, simplemente rechazamos el error
+        if (!error.response || !originalRequest) {
+          return Promise.reject(error);
+        }
+
+        // 🛑 Si es el endpoint de login, no intentamos refrescar el token
+        if (originalRequest.url?.includes("/login")) {
+          return Promise.reject(error);
+        }
+
+        // 🔄 Si el token expiró (401), intentar refrescar
+        if (status === 401 && !originalRequest._retry) {
           if (this.isRefreshing) {
-            // Si ya se está refrescando, encolar la petición
+            // Si ya se está refrescando, encolamos la petición
             return new Promise((resolve, reject) => {
               this.failedQueue.push({ resolve, reject });
             })
-              .then(token => {
+              .then((token) => {
                 if (originalRequest.headers) {
                   originalRequest.headers.Authorization = `Bearer ${token}`;
                 }
                 return this.api(originalRequest);
               })
-              .catch(err => Promise.reject(err));
+              .catch((err) => Promise.reject(err));
           }
 
           originalRequest._retry = true;
@@ -197,35 +212,42 @@ class AuthService {
             const refreshToken = this.getRefreshToken();
             if (refreshToken) {
               const response = await this.refreshToken({ refreshToken });
+
               if (response.access_token) {
                 this.setToken(response.access_token);
                 this.processQueue(null, response.access_token);
-                
+
                 if (originalRequest.headers) {
                   originalRequest.headers.Authorization = `Bearer ${response.access_token}`;
                 }
+
                 return this.api(originalRequest);
               }
             }
-            throw new Error('No refresh token available');
+
+            throw new Error("No refresh token available");
           } catch (refreshError) {
             this.processQueue(refreshError as AxiosError, null);
             this.clearAuth();
-            
-            // Redirigir al login en Next.js
-            if (typeof window !== 'undefined') {
-              window.location.href = '/login';
+
+            // 🔁 Redirigir al login solo si el refresh token falló
+            if (typeof window !== "undefined") {
+              window.location.href = "/login";
             }
+
             return Promise.reject(refreshError);
           } finally {
             this.isRefreshing = false;
           }
         }
 
+        // 🚨 Para cualquier otro error, lo pasamos tal cual al catch del frontend
         return Promise.reject(error);
       }
     );
   }
+
+
 
   // ============================================================================
   // REGISTRO Y ACTIVACIÓN
@@ -325,6 +347,11 @@ class AuthService {
     return response.data;
   }
 
+  async resendResetCode(data: ResendResetCodeDTO): Promise<AuthResponseDTO> {
+    const response = await this.api.post<AuthResponseDTO>(`${this.BASE_URL}/resend-reset-code`, data);
+    return response.data;
+  }
+
   // ============================================================================
   // GESTIÓN DE CONTRASEÑA Y EMAIL
   // ============================================================================
@@ -409,11 +436,11 @@ class AuthService {
 
   private getToken(): string | null {
     if (typeof window === 'undefined') return null;
-    
+
     const name = 'token=';
     const decodedCookie = decodeURIComponent(document.cookie);
     const ca = decodedCookie.split(';');
-    
+
     for (let i = 0; i < ca.length; i++) {
       let c = ca[i].trim();
       if (c.indexOf(name) === 0) {
@@ -434,11 +461,11 @@ class AuthService {
 
   private getRefreshToken(): string | null {
     if (typeof window === 'undefined') return null;
-    
+
     const name = 'refreshToken=';
     const decodedCookie = decodeURIComponent(document.cookie);
     const ca = decodedCookie.split(';');
-    
+
     for (let i = 0; i < ca.length; i++) {
       let c = ca[i].trim();
       if (c.indexOf(name) === 0) {
@@ -462,8 +489,6 @@ class AuthService {
   isAuthenticated(): boolean {
     return this.getToken() !== null;
   }
-
-  
 
   getAuthToken(): string | null {
     return this.getToken();

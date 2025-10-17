@@ -1,4 +1,5 @@
 /// <reference types="cypress" />
+import 'cypress-real-events'
 
 // ***********************************************
 // This example commands.ts shows you how to
@@ -76,4 +77,4 @@ declare global {
   }
 }
 
-export {};
+export { };
