@@ -11,6 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { CheckCircle2, Loader2, XCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/animate-ui/components/buttons/button"
+import { useApiErrorHandler } from '@/hooks/useApiErrorHandler'
 
 /**
  * Schema de validación para el formulario de forgot password
@@ -31,6 +32,8 @@ export default function ForgotPassword() {
     const [showErrorAlert, setShowErrorAlert] = useState(false)
     const [successMessage, setSuccessMessage] = useState('')
     const [errorMessage, setErrorMessage] = useState('')
+    const handleError = useApiErrorHandler()
+    
 
     /**
      * Formulario de forgot password
